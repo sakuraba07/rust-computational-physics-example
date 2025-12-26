@@ -1,0 +1,11 @@
+[package]
+name = "csv_test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+csv = "1.4.0"
+kiss3d = "0.37.2"
+nalgebra = "0.34.1"
+plotters = "0.3.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
