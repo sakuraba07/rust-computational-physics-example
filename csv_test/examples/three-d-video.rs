@@ -1,6 +1,9 @@
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
-use three_d::*;
+use three_d::{
+    AmbientLight, Camera, ClearState, CpuMaterial, CpuMesh, DirectionalLight, FrameOutput, Gm,
+    Mat4, Mesh, PhysicalMaterial, Srgba, Window, WindowSettings, degrees, radians, vec3,
+};
 
 // ウィンドウ設定
 const WINDOW_TITLE: &str = "three-d: Video Export";
@@ -31,7 +34,7 @@ const FPS: u32 = 60;
 const DURATION_SECONDS: f32 = 5.0;
 const ROTATION_SPEED: f32 = 1.0; // ラジアン/秒
 
-/// FFmpegのエンコーダーをラップする構造体
+/// `FFmpeg` のエンコーダーをラップする構造体
 struct FfmpegEncoder {
     child: Child,
     width: u32,
@@ -48,7 +51,7 @@ impl FfmpegEncoder {
                 "-pixel_format",
                 "rgba", // ピクセルフォーマット
                 "-video_size",
-                &format!("{}x{}", width, height), // 解像度
+                &format!("{width}x{height}"), // 解像度
                 "-framerate",
                 &fps.to_string(), // フレームレート
                 "-i",
@@ -104,6 +107,76 @@ impl FfmpegEncoder {
     }
 }
 
+/// シーンのセットアップ（カメラ、立方体、光源）
+fn setup_scene(
+    context: &three_d::Context,
+    viewport: three_d::Viewport,
+) -> (
+    Camera,
+    Gm<Mesh, PhysicalMaterial>,
+    DirectionalLight,
+    AmbientLight,
+) {
+    let camera = Camera::new_perspective(
+        viewport,
+        vec3(CAMERA_POSITION.0, CAMERA_POSITION.1, CAMERA_POSITION.2),
+        vec3(CAMERA_TARGET.0, CAMERA_TARGET.1, CAMERA_TARGET.2),
+        vec3(CAMERA_UP.0, CAMERA_UP.1, CAMERA_UP.2),
+        degrees(CAMERA_FOV_DEGREES),
+        CAMERA_NEAR,
+        CAMERA_FAR,
+    );
+
+    let cube = Gm::new(
+        Mesh::new(context, &CpuMesh::cube()),
+        PhysicalMaterial::new_opaque(
+            context,
+            &CpuMaterial {
+                albedo: CUBE_COLOR,
+                ..Default::default()
+            },
+        ),
+    );
+
+    let light = DirectionalLight::new(
+        context,
+        DIRECTIONAL_LIGHT_INTENSITY,
+        Srgba::WHITE,
+        vec3(
+            DIRECTIONAL_LIGHT_DIRECTION.0,
+            DIRECTIONAL_LIGHT_DIRECTION.1,
+            DIRECTIONAL_LIGHT_DIRECTION.2,
+        ),
+    );
+
+    let ambient = AmbientLight::new(context, AMBIENT_LIGHT_INTENSITY, Srgba::WHITE);
+
+    (camera, cube, light, ambient)
+}
+
+/// 総フレーム数を計算
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
+fn calculate_total_frames(fps: u32, duration: f32) -> u32 {
+    (f64::from(fps) * f64::from(duration)) as u32
+}
+
+/// 進捗を表示
+#[allow(clippy::cast_precision_loss)]
+fn print_progress(frame_count: u32, total_frames: u32) {
+    let progress = (frame_count + 1) as f32 / total_frames as f32 * 100.0;
+    print!(
+        "\rフレーム {}/{} ({:.1}%)",
+        frame_count + 1,
+        total_frames,
+        progress
+    );
+    std::io::stdout().flush().ok();
+}
+
 fn main() {
     // ウィンドウの作成
     let window = Window::new(WindowSettings {
@@ -115,44 +188,13 @@ fn main() {
 
     let context = window.gl();
 
-    // カメラの設定（初期ビューポートはウィンドウサイズで設定、後で更新される）
-    let mut camera = Camera::new_perspective(
-        window.viewport(),
-        vec3(CAMERA_POSITION.0, CAMERA_POSITION.1, CAMERA_POSITION.2),
-        vec3(CAMERA_TARGET.0, CAMERA_TARGET.1, CAMERA_TARGET.2),
-        vec3(CAMERA_UP.0, CAMERA_UP.1, CAMERA_UP.2),
-        degrees(CAMERA_FOV_DEGREES),
-        CAMERA_NEAR,
-        CAMERA_FAR,
-    );
-
-    // 立方体の作成
-    let mut cube = Gm::new(
-        Mesh::new(&context, &CpuMesh::cube()),
-        PhysicalMaterial::new_opaque(
-            &context,
-            &CpuMaterial {
-                albedo: CUBE_COLOR,
-                ..Default::default()
-            },
-        ),
-    );
-
-    // 光源の設定
-    let light = DirectionalLight::new(
-        &context,
-        DIRECTIONAL_LIGHT_INTENSITY,
-        Srgba::WHITE,
-        vec3(
-            DIRECTIONAL_LIGHT_DIRECTION.0,
-            DIRECTIONAL_LIGHT_DIRECTION.1,
-            DIRECTIONAL_LIGHT_DIRECTION.2,
-        ),
-    );
-    let ambient = AmbientLight::new(&context, AMBIENT_LIGHT_INTENSITY, Srgba::WHITE);
+    // シーンのセットアップ
+    let (mut camera, mut cube, light, ambient) = setup_scene(&context, window.viewport());
 
     // 総フレーム数
-    let total_frames = (FPS as f32 * DURATION_SECONDS) as u32;
+    let total_frames = calculate_total_frames(FPS, DURATION_SECONDS);
+
+    #[allow(clippy::cast_precision_loss)]
     let delta_time = 1.0 / FPS as f32;
 
     // フレームカウンタ
@@ -180,14 +222,10 @@ fn main() {
         // 最初のフレームでFFmpegを初期化
         if encoder.is_none() {
             println!(
-                "実際のビューポートサイズ: {}x{} (Retinaスケール適用後)",
-                actual_width, actual_height
+                "実際のビューポートサイズ: {actual_width}x{actual_height} (Retinaスケール適用後)"
             );
-            println!(
-                "動画出力開始: {}フレーム ({:.1}秒, {}FPS)",
-                total_frames, DURATION_SECONDS, FPS
-            );
-            println!("出力ファイル: {}", OUTPUT_FILE);
+            println!("動画出力開始: {total_frames}フレーム ({DURATION_SECONDS:.1}秒, {FPS}FPS)");
+            println!("出力ファイル: {OUTPUT_FILE}");
             encoder = Some(FfmpegEncoder::new(
                 actual_width,
                 actual_height,
@@ -197,7 +235,7 @@ fn main() {
         }
 
         if frame_count >= total_frames {
-            println!("\n出力完了: {}", OUTPUT_FILE);
+            println!("\n出力完了: {OUTPUT_FILE}");
             if let Some(ref mut enc) = encoder {
                 enc.finish();
             }
@@ -243,14 +281,7 @@ fn main() {
         }
 
         // 進捗表示
-        let progress = (frame_count + 1) as f32 / total_frames as f32 * 100.0;
-        print!(
-            "\rフレーム {}/{} ({:.1}%)",
-            frame_count + 1,
-            total_frames,
-            progress
-        );
-        std::io::stdout().flush().ok();
+        print_progress(frame_count, total_frames);
 
         // 次のフレームへ
         angle += ROTATION_SPEED * delta_time;

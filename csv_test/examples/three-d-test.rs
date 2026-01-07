@@ -1,4 +1,8 @@
-use three_d::*;
+use three_d::{
+    AmbientLight, Camera, ClearState, CpuMaterial, CpuMesh, DirectionalLight, FrameOutput, Gm,
+    Mat4, Mesh, OrbitControl, PhysicalMaterial, Srgba, Window, WindowSettings, degrees, radians,
+    vec3,
+};
 
 // ウィンドウ設定
 const WINDOW_TITLE: &str = "three-d: Cube";
@@ -93,6 +97,7 @@ fn main() {
 
         // フレームレートに依存しない回転
         // elapsed_time はミリ秒単位なので秒に変換
+        #[allow(clippy::cast_possible_truncation)]
         let delta_time = frame_input.elapsed_time as f32 / 1000.0;
         angle += ROTATION_SPEED * delta_time;
         cube.set_transformation(Mat4::from_angle_y(radians(angle)));
