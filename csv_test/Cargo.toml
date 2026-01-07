@@ -2,8 +2,13 @@
 name = "csv_test"
 version = "0.1.0"
 edition = "2024"
+description = "CSV data generation and visualization examples with 3D rendering"
+license = "CC0-1.0"
+readme = "README.md"
 
-[dependencies]
-csv = "1.4.0"
-plotters = "0.3.7"
+# メインバイナリでは外部クレートを使用しないため、
+# examples でのみ使用するクレートは dev-dependencies に配置
+[dev-dependencies]
+csv = "1.4"
+plotters = "0.3"
 three-d = "0.18"
