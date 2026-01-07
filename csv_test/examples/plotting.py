@@ -1,6 +1,6 @@
 import japanize_matplotlib  # noqa
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # CSVファイルの読み込み
 df = pd.read_csv("output.csv")

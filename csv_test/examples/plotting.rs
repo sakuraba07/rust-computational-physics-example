@@ -13,11 +13,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    // 2. 描画バックエンドのセットアップ
+    // 2. 描画バックエンドをセットアップする
     let root = BitMapBackend::new("plot-single.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE)?;
 
-    // 3. チャートの構築
+    // 3. チャートを構築する
     let mut chart = ChartBuilder::on(&root)
         .caption("Position x vs. Time t (from CSV)", ("sans-serif", 30))
         .margin(20)
@@ -25,17 +25,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         .y_label_area_size(40)
         .build_cartesian_2d(0.0..10.0, -1.5..1.5)?;
 
-    // 4. メッシュ (軸とグリッド線) の描画
+    // 4. メッシュ (軸とグリッド線) を描画する
     chart
         .configure_mesh()
         .x_desc("Time t")
         .y_desc("Position x")
         .draw()?;
 
-    // 5. データ系列 (t, x) の描画
+    // 5. データ系列 (t, x) を描画する
     chart.draw_series(LineSeries::new(data, &RED))?;
 
-    // 6. ファイルへの保存
+    // 6. ファイルに保存する
     root.present()?;
     println!("plot-single.png を生成しました");
     Ok(())

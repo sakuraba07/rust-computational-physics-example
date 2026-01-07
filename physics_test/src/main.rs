@@ -21,7 +21,7 @@ fn main() {
         if h >= 0.0 {
             println!("{:6.1}  {:7.2}  {:9.2}", t, h, v);
         } else {
-            // 地面に到達したら、正確な到達時刻と速度を計算して終了
+            // 地面に到達した場合、正確な到達時刻と速度を算出して終了
             let t_impact = (v0 + (v0 * v0 + 2.0 * g * h0).sqrt()) / g;
             let v_impact = v0 - g * t_impact;
             println!("{:6.2}  {:7.2}  {:9.2} (地面到達)", t_impact, 0.0, v_impact);
