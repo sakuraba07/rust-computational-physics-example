@@ -1,0 +1,8 @@
+[package]
+name = "double-double"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+simba = "0.9"
+xprec = "0.2"
