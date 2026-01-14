@@ -1,1 +1,0 @@
-/Users/operating6846/Work/rust-tutorial/rust-computational-physics-example/ch02/arrays/target/debug/arrays: /Users/operating6846/Work/rust-tutorial/rust-computational-physics-example/ch02/arrays/src/main.rs
