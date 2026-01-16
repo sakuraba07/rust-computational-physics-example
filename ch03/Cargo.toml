@@ -1,0 +1,9 @@
+[package]
+name = "ch03"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+csv = "1.4.0"
+libm = "0.2.15"
+plotters = "0.3.7"
