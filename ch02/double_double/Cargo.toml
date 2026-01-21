@@ -1,7 +1,8 @@
 [package]
-name = "floating-point"
+name = "double_double"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-approx = "0.5"
+simba = "0.9"
+xprec = "0.2"
