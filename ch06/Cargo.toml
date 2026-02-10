@@ -1,0 +1,10 @@
+[package]
+name = "ch06"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ndarray = "0.17"
+num-complex = "0.4"
+rustfft = "6.4"
+plotters = "0.3"
